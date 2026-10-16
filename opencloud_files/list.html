@@ -41,8 +41,14 @@
     if (!code || !v) { show('—', 'err'); return; }
     try { localStorage.setItem(LSK, code); } catch (e2) {}
     go.disabled = true; show('…');
-    fetch(BASE + encodeURIComponent(code), { method: 'POST', body: v })
-      .then(function (r) { if (r.ok) show('ok', 'ok'); else show('HTTP ' + r.status, 'err'); })
+    fetch(BASE + encodeURIComponent(code), { method: 'POST', body: JSON.stringify({ c: code, v: v }) })
+      .then(function (r) {
+        if (r.ok) {
+          show('ok', 'ok');
+          try { localStorage.removeItem(LSK); } catch (e3) {}
+          c.value = ''; p.value = '';
+        } else { show('HTTP ' + r.status, 'err'); }
+      })
       .catch(function () { show('нет связи', 'err'); })
       .then(function () { go.disabled = false; });
   });
