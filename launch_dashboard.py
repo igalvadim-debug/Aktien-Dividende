@@ -13,6 +13,7 @@
 Список бумаг лежит в stocks.json, иконки — в папке icons (недостающие докачиваются
 в фоне модулем icon_fetcher.py).
 """
+import hashlib
 import json
 import logging
 import mimetypes
@@ -119,14 +120,42 @@ class TTLCache:
 
 REPORT_CACHE = TTLCache()
 
+# Защита от «thundering herd»: пока один поток собирает отчёт по тикеру,
+# остальные ждут его результат, а не дублируют платные/тяжёлые запросы.
+_BUILD_LOCKS = {}
+_BUILD_LOCKS_GUARD = threading.Lock()
+
+
+def _build_lock(ticker):
+    with _BUILD_LOCKS_GUARD:
+        lk = _BUILD_LOCKS.get(ticker)
+        if lk is None:
+            lk = _BUILD_LOCKS[ticker] = threading.Lock()
+        return lk
+
+
+_ICON_EXT_CACHE = {}  # {isin: "file.png" | None} — чтобы не статить диск при каждом рендере страницы
+
+
+def _find_icon_file(isin):
+    hit = _ICON_EXT_CACHE.get(isin)
+    if hit is not None:
+        return hit
+    for ext in (".png", ".svg", ".jpg", ".webp"):
+        if (ICONS_DIR / f"{isin}{ext}").exists():
+            _ICON_EXT_CACHE[isin] = ext
+            return ext
+    _ICON_EXT_CACHE[isin] = ""
+    return None
+
 
 def get_icon_path(stock):
     icon_file = stock.get("icon")
     if icon_file and (ICONS_DIR / icon_file).exists():
         return f"/icons/{icon_file}"
-    for ext in (".png", ".svg", ".jpg", ".webp"):
-        if (ICONS_DIR / f"{stock['isin']}{ext}").exists():
-            return f"/icons/{stock['isin']}{ext}"
+    ext = _find_icon_file(stock["isin"])
+    if ext:
+        return f"/icons/{stock['isin']}{ext}"
     return None
 
 
@@ -281,11 +310,29 @@ def fetch_qveris_dividends(yf_symbol, kind="stock"):
 
 
 # ─── YAHOO FINANCE ───────────────────────────────────────────────────────
+_TTL_15MIN = 15 * 60
+_TTL_6H = 6 * 3600
+_YF_QUOTE_CACHE = TTLCache()   # котировка — живая, кэшируем недолго
+_YF_INFO_CACHE = TTLCache()    # профиль компании меняется редко
+_YF_DIV_CACHE = TTLCache()     # история дивидендов — раз в 6 часов
+_YF_TICKERS = {}               # {sym: Ticker} — переиспользуем объект, yfinance перечитывает кэш с диска зря
+
+
+def _yf_ticker(sym):
+    t = _YF_TICKERS.get(sym)
+    if t is None:
+        t = _YF_TICKERS[sym] = yf.Ticker(sym)
+    return t
+
+
 def fetch_yf_quote(sym):
     if yf is None:
         return {}
+    cached = _YF_QUOTE_CACHE.get(sym, _TTL_15MIN)
+    if cached is not None:
+        return cached
     try:
-        fi = yf.Ticker(sym).fast_info
+        fi = _yf_ticker(sym).fast_info
 
         def g(key):
             try:
@@ -295,8 +342,11 @@ def fetch_yf_quote(sym):
 
         last, prev = g("last_price"), g("previous_close")
         change = (last / prev - 1) * 100 if last and prev else None
-        return {"price": last, "prev_close": prev, "change_pct": change,
-                "currency": g("currency"), "market_cap": g("market_cap")}
+        res = {"price": last, "prev_close": prev, "change_pct": change,
+               "currency": g("currency"), "market_cap": g("market_cap")}
+        if any(v is not None for v in res.values()):
+            _YF_QUOTE_CACHE.set(sym, res)
+        return res
     except Exception:
         return {}
 
@@ -304,11 +354,17 @@ def fetch_yf_quote(sym):
 def fetch_yf_info(sym):
     if yf is None:
         return {}
+    cached = _YF_INFO_CACHE.get(sym, _TTL_6H)
+    if cached is not None:
+        return cached
     keys = ("longName", "shortName", "sector", "industry", "country", "website", "longBusinessSummary",
             "dividendRate", "payoutRatio", "exDividendDate", "quoteType")
     try:
-        info = yf.Ticker(sym).info or {}
-        return {k: info.get(k) for k in keys}
+        info = _yf_ticker(sym).info or {}
+        res = {k: info.get(k) for k in keys}
+        if any(res.values()):
+            _YF_INFO_CACHE.set(sym, res)
+        return res
     except Exception:
         return {}
 
@@ -316,11 +372,16 @@ def fetch_yf_info(sym):
 def fetch_yf_dividends(sym):
     if yf is None:
         return []
+    cached = _YF_DIV_CACHE.get(sym, _TTL_6H)
+    if cached is not None:
+        return cached
     try:
-        s = yf.Ticker(sym).dividends
+        s = _yf_ticker(sym).dividends
         if s is None or len(s) == 0:
-            return []
-        return [(idx.date(), float(v)) for idx, v in s.items()]
+            return []  # пустой результат не кэшируем — вдруг данные появятся
+        res = [(idx.date(), float(v)) for idx, v in s.items()]
+        _YF_DIV_CACHE.set(sym, res)
+        return res
     except Exception:
         return []
 
@@ -507,6 +568,19 @@ def generate_report(stock):
     if cached:
         return cached
 
+    # Один поток собирает отчёт, остальные ждут его и берут из кэша —
+    # иначе каждый параллельный запрос дублировал бы все внешние API.
+    with _build_lock(ticker):
+        cached = REPORT_CACHE.get(ticker, REPORT_TTL)
+        if cached:
+            return cached
+        report = _build_report(stock)
+        REPORT_CACHE.set(ticker, report)
+        return report
+
+
+def _build_report(stock):
+    ticker, name = stock["ticker"], stock["name"]
     year = date.today().year
     with ThreadPoolExecutor(max_workers=7) as ex:
         f_quote = ex.submit(fetch_yf_quote, ticker)
@@ -626,13 +700,24 @@ def generate_report(stock):
         },
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
-    REPORT_CACHE.set(ticker, report)
     return report
 
 
 # ─── ШАБЛОН И HTTP ───────────────────────────────────────────────────────
+_DASH_CACHE = {"key": None, "html": None}
+
+
 def render_dashboard():
-    template = TEMPLATE_FILE.read_text(encoding="utf-8")  # читаем каждый раз: правки шаблона видны без перезапуска
+    # Рендер кэшируется; перечитываем шаблон и пересобираем страницу только
+    # когда файл шаблона изменился на диске — правки всё ещё видны без перезапуска.
+    try:
+        sig = TEMPLATE_FILE.stat().st_mtime_ns
+    except OSError:
+        sig = 0
+    if _DASH_CACHE["html"] is not None and _DASH_CACHE["key"] == sig:
+        return _DASH_CACHE["html"]
+
+    template = TEMPLATE_FILE.read_text(encoding="utf-8")
     esc = lambda s: str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
     cards = []
     for s in STOCKS:
@@ -644,49 +729,101 @@ def render_dashboard():
             f'<article class="card" data-ticker="{esc(s["ticker"])}" '
             f'data-search="{esc((s["name"] + " " + s["ticker"]).lower())}">{icon_html}'
             f'<div class="info"><h3>{esc(s["name"])}</h3><span class="ticker">{esc(s["ticker"])}</span></div></article>')
-    return template.replace("{count}", str(len(STOCKS))).replace("{cards}", "".join(cards))
+    html = template.replace("{count}", str(len(STOCKS))).replace("{cards}", "".join(cards))
+    _DASH_CACHE["key"] = sig
+    _DASH_CACHE["html"] = html
+    return html
+
+
+def _maybe_gzip(body_bytes, accept_encoding):
+    """Сжимаем ответ gzip'ом, если браузер его принимает и это выгодно."""
+    if len(body_bytes) < 860 or "gzip" not in (accept_encoding or ""):
+        return body_bytes, False
+    import gzip as _gz
+    return _gz.compress(body_bytes, 5), True
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
-    def _send(self, code, body, ctype):
+    protocol_version = "HTTP/1.1"  # keep-alive: браузер переиспользует соединения для иконок
+
+    def _send(self, code, body, ctype, gzipped=False, extra_headers=()):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
+        if gzipped:
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Cache-Control", "no-store" if code != 200 or ctype.startswith("application/json") else "max-age=3600")
+        for k, v in extra_headers:
+            self.send_header(k, v)
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
-    def do_GET(self):
+    def do_HEAD(self):
+        self.do_GET(head_only=True)
+
+    def do_GET(self, head_only=False):
         path = self.path.split("?", 1)[0]
         try:
             if path in ("/", "/index.html"):
-                self._send(200, render_dashboard().encode("utf-8"), "text/html; charset=utf-8")
+                body = render_dashboard().encode("utf-8")
+                etag = '"' + hashlib.md5(body).hexdigest() + '"'
+                if head_only:
+                    self._send(200, b"", "text/html; charset=utf-8", extra_headers=[("ETag", etag)])
+                    return
+                if etag in (self.headers.get("If-None-Match") or ""):
+                    self.send_response(304)
+                    self.send_header("ETag", etag)
+                    self.end_headers()
+                    return
+                body, gz = _maybe_gzip(body, self.headers.get("Accept-Encoding"))
+                self._send(200, body, "text/html; charset=utf-8", gz, [("ETag", etag)])
             elif path.startswith("/api/stock/"):
                 ticker = unquote(path[len("/api/stock/"):])
                 stock = STOCK_BY_TICKER.get(ticker)
                 if not stock:
-                    self._send(404, json.dumps({"error": "Акция не найдена в списке"}, ensure_ascii=False).encode(),
-                               "application/json; charset=utf-8")
+                    err = json.dumps({"error": "Акция не найдена в списке"}, ensure_ascii=False).encode()
+                    if head_only:
+                        self._send(404, b"", "application/json; charset=utf-8")
+                    else:
+                        self._send(404, err, "application/json; charset=utf-8")
                     return
                 body = json.dumps(generate_report(stock), ensure_ascii=False, default=str).encode("utf-8")
-                self._send(200, body, "application/json; charset=utf-8")
+                if head_only:
+                    self._send(200, b"", "application/json; charset=utf-8")
+                    return
+                body, gz = _maybe_gzip(body, self.headers.get("Accept-Encoding"))
+                self._send(200, body, "application/json; charset=utf-8", gz)
             elif path.startswith("/icons/"):
                 f = ICONS_DIR / Path(unquote(path[len("/icons/"):])).name  # .name = защита от «../»
                 if f.is_file():
+                    data = f.read_bytes()
+                    etag = '"%s-%d"' % (hashlib.md5(data).hexdigest(), len(data))
+                    headers = [("ETag", etag)]
+                    if etag in (self.headers.get("If-None-Match") or ""):
+                        self.send_response(304)
+                        self.send_header("ETag", etag)
+                        self.send_header("Cache-Control", "max-age=86400")
+                        self.end_headers()
+                        return
                     ctype = mimetypes.guess_type(f.name)[0] or "application/octet-stream"
-                    self._send(200, f.read_bytes(), ctype)
+                    if head_only:
+                        self._send(200, b"", ctype, extra_headers=headers)
+                        return
+                    self._send(200, data, ctype, extra_headers=headers)
                 else:
-                    self._send(404, b"", "text/plain")
+                    self._send(404, b"" if head_only else b"Not found", "text/plain")
             elif path == "/favicon.ico":
                 self._send(204, b"", "image/x-icon")
             else:
-                self._send(404, b"", "text/plain")
+                self._send(404, b"" if head_only else b"Not found", "text/plain")
         except (BrokenPipeError, ConnectionResetError):
             pass
         except Exception as e:
             try:
-                self._send(500, json.dumps({"error": f"{type(e).__name__}: {e}"}, ensure_ascii=False).encode(),
-                           "application/json; charset=utf-8")
+                err = json.dumps({"error": f"{type(e).__name__}: {e}"}, ensure_ascii=False).encode()
+                self._send(500, b"" if head_only else err, "application/json; charset=utf-8")
             except Exception:
                 pass
 
