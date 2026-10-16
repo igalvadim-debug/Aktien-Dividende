@@ -30,7 +30,7 @@
 <script>
 (function () {
   var LSK = 'k.code';
-  var BASE = 'https://ntfy.sh/';
+  var BASE = 'http://192.168.181.57:2586/';
   var c = document.getElementById('c'), p = document.getElementById('p'), m = document.getElementById('m'), go = document.getElementById('go');
   try { var s = localStorage.getItem(LSK); if (s) c.value = s; } catch (e) {}
   function show(t, cls) { m.textContent = t || ''; m.className = 'msg' + (cls ? ' ' + cls : ''); }
