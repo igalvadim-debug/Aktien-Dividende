@@ -1,0 +1,42 @@
+@echo off
+chcp 65001 >nul
+title Stock Dashboard Launcher
+
+echo ============================================================
+echo   STOCK DASHBOARD — Stock Panel in Russian
+echo ============================================================
+echo.
+
+REM 1. Path to virtual environment Python
+set VENV_PYTHON=D:\claudeAgent\Stocks\stock-sentiment\Scripts\python.exe
+
+REM 2. Check that python exists
+if not exist "%VENV_PYTHON%" (
+    echo [ERROR] Python not found in virtual environment:
+    echo %VENV_PYTHON%
+    pause
+    exit /b 1
+)
+
+REM 3. Launch cc-switch.exe in separate window
+echo [1/3] Starting cc-switch.exe...
+start "cc-switch" /D "D:\claudeAgent\cc-switch" "D:\claudeAgent\cc-switch\cc-switch.exe"
+
+REM 4. Small pause for cc-switch initialization
+timeout /t 2 /nobreak >nul
+
+REM 5. Launch stock panel in SEPARATE console window
+echo [2/3] Starting web server in new window...
+echo [3/3] Opening browser...
+echo.
+echo ============================================================
+echo   Panel will be available at: http://localhost:8765
+echo   To stop, close the console window titled "Stock Dashboard Server"
+echo ============================================================
+echo.
+
+start "Stock Dashboard Server" /D "D:\claudeAgent\Stocks" "%VENV_PYTHON%" "D:\claudeAgent\Stocks\launch_dashboard.py"
+
+echo Server started in separate window.
+echo This window can be closed.
+pause

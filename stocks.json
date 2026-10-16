@@ -1,0 +1,445 @@
+[
+ {
+  "ticker": "ADS.DE",
+  "name": "Adidas AG",
+  "isin": "DE000A1EWWW0",
+  "icon": "DE000A1EWWW0.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "ALV.DE",
+  "name": "Allianz SE",
+  "isin": "DE0008404005",
+  "icon": "DE0008404005.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "ALX.DE",
+  "name": "Alexanderwerk AG",
+  "isin": "DE0005488600",
+  "icon": "DE0005488600.png",
+  "kind": "stock",
+  "note": "На Yahoo Finance нет котировок (вероятно, снята с торгов)"
+ },
+ {
+  "ticker": "BAS.DE",
+  "name": "BASF SE",
+  "isin": "DE000BASF111",
+  "icon": "DE000BASF111.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "BAYN.DE",
+  "name": "Bayer AG",
+  "isin": "DE000BAY0017",
+  "icon": "DE000BAY0017.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "BMW.DE",
+  "name": "BMW AG",
+  "isin": "DE0005190003",
+  "icon": "DE0005190003.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "CON.DE",
+  "name": "Continental AG",
+  "isin": "DE0005439004",
+  "icon": "DE0005439004.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "DBK.DE",
+  "name": "Deutsche Bank AG",
+  "isin": "DE0005140008",
+  "icon": "DE0005140008.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "DHL.DE",
+  "name": "DHL Group (ранее Deutsche Post)",
+  "isin": "DE0005552004",
+  "icon": "DE0005552004.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "DTE.DE",
+  "name": "Deutsche Telekom AG",
+  "isin": "DE0005557508",
+  "icon": "DE0005557508.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "DWS.DE",
+  "name": "DWS Group",
+  "isin": "DE000DWS1007",
+  "icon": "DE000DWS1007.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "EOAN.DE",
+  "name": "E.ON SE",
+  "isin": "DE000ENAG999",
+  "icon": "DE000ENAG999.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "FRE.DE",
+  "name": "Fresenius SE",
+  "isin": "DE0005785604",
+  "icon": "DE0005785604.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "HEI.DE",
+  "name": "Heidelberg Materials",
+  "isin": "DE0006047004",
+  "icon": "DE0006047004.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "HDD.DE",
+  "name": "Heidelberger Druckmaschinen AG",
+  "isin": "DE0007314007",
+  "icon": "heidelbergerDruckmaschinen.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "HNR1.DE",
+  "name": "Hannover Rück SE",
+  "isin": "DE0008402215",
+  "icon": "DE0008402215.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "HEN3.DE",
+  "name": "Henkel AG & Co. KGaA (предпочтительные)",
+  "isin": "DE0006048432",
+  "icon": "DE0006048432.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "IFX.DE",
+  "name": "Infineon Technologies",
+  "isin": "DE0006231004",
+  "icon": "DE0006231004.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "INGA.AS",
+  "name": "ING Groep NV",
+  "isin": "NL0011821202",
+  "icon": "NL0011821202.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "LIN.DE",
+  "name": "Linde PLC",
+  "isin": "IE000S9YS762",
+  "icon": "IE000S9YS762.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "MBG.DE",
+  "name": "Mercedes-Benz Group",
+  "isin": "DE0007100000",
+  "icon": "DE0007100000.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "MRK.DE",
+  "name": "Merck KGaA",
+  "isin": "DE0006599905",
+  "icon": "DE0006599905.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "MTX.DE",
+  "name": "MTU Aero Engines",
+  "isin": "DE000A0D9PT0",
+  "icon": "DE000A0D9PT0.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "MUV2.DE",
+  "name": "Munich Re",
+  "isin": "DE0008430026",
+  "icon": "DE0008430026.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "PAH3.DE",
+  "name": "Porsche Automobil Holding",
+  "isin": "DE000PAH0038",
+  "icon": "DE000PAH0038.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "P911.DE",
+  "name": "Porsche AG",
+  "isin": "DE000A3H2101",
+  "icon": "DE000A3H2101.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "QIA.DE",
+  "name": "Qiagen NV",
+  "isin": "NL0012169213",
+  "icon": "NL0012169213.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "QPR.DE",
+  "name": "Quirin Privatbank AG",
+  "isin": "DE000A1H72F1",
+  "icon": "DE000A1H72F1.png",
+  "kind": "stock",
+  "note": "На Yahoo Finance нет котировок (вероятно, снята с торгов)"
+ },
+ {
+  "ticker": "R3NK.DE",
+  "name": "Renk Group",
+  "isin": "DE000RENK730",
+  "icon": "DE000RENK730.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "RHM.DE",
+  "name": "Rheinmetall AG",
+  "isin": "DE0007030009",
+  "icon": "DE0007030009.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "RWE.DE",
+  "name": "RWE AG",
+  "isin": "DE0007037129",
+  "icon": "DE0007037129.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SAP.DE",
+  "name": "SAP SE",
+  "isin": "DE0007164600",
+  "icon": "DE0007164600.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SRT3.DE",
+  "name": "Sartorius AG (предпочтительные)",
+  "isin": "DE0007165631",
+  "icon": "DE0007165631.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SIE.DE",
+  "name": "Siemens AG",
+  "isin": "DE0007236101",
+  "icon": "DE0007236101.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SY1.DE",
+  "name": "Symrise AG",
+  "isin": "DE000SYM9999",
+  "icon": "DE000SYM9999.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "TUI1.DE",
+  "name": "TUI AG",
+  "isin": "DE000TUAG505",
+  "icon": "DE000TUAG505.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "VNA.DE",
+  "name": "Vonovia SE",
+  "isin": "DE000A1ML7J1",
+  "icon": "DE000A1ML7J1.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "VOW3.DE",
+  "name": "Volkswagen AG (предпочтительные)",
+  "isin": "DE0007664039",
+  "icon": "DE0007664039.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "WCH.DE",
+  "name": "Wacker Chemie AG",
+  "isin": "DE000WCH8881",
+  "icon": "DE000WCH8881.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "ZAL.DE",
+  "name": "Zalando SE",
+  "isin": "DE000ZAL1111",
+  "icon": "DE000ZAL1111.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "AGCO",
+  "name": "AGCO Corp.",
+  "isin": "US0010841023",
+  "icon": "US0010841023.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "AAPL",
+  "name": "Apple Inc.",
+  "isin": "US0378331005",
+  "icon": "US0378331005.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "AMZN",
+  "name": "Amazon.com Inc.",
+  "isin": "US0231351067",
+  "icon": "US0231351067.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "BATS.L",
+  "name": "British American Tobacco",
+  "isin": "GB0002875804",
+  "icon": "GB0002875804.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "CIBUS.ST",
+  "name": "Cibus Nordic Real Estate",
+  "isin": "SE0010832204",
+  "icon": "SE0010832204.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "F",
+  "name": "Ford Motor Co.",
+  "isin": "US3453708600",
+  "icon": "US3453708600.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "GFI",
+  "name": "Gold Fields Ltd.",
+  "isin": "ZAE000018123",
+  "icon": "ZAE000018123.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "GOOGL",
+  "name": "Alphabet Inc.",
+  "isin": "US02079K3059",
+  "icon": "US02079K3059.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "JNJ",
+  "name": "Johnson & Johnson",
+  "isin": "US4781601046",
+  "icon": "US4781601046.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "KPN.AS",
+  "name": "KPN NV",
+  "isin": "NL0000009082",
+  "icon": "NL0000009082.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "LTC",
+  "name": "LTC Properties Inc.",
+  "isin": "US5021751020",
+  "icon": "US5021751020_b9LN2DO.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "LYB",
+  "name": "LyondellBasell Industries",
+  "isin": "NL0009434992",
+  "icon": "NL0009434992.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "META",
+  "name": "Meta Platforms Inc.",
+  "isin": "US30303M1027",
+  "icon": "US30303M1027.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "MSFT",
+  "name": "Microsoft Corp.",
+  "isin": "US5949181045",
+  "icon": "US5949181045.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "NVDA",
+  "name": "NVIDIA Corp.",
+  "isin": "US67066G1040",
+  "icon": "US67066G1040.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "ECO",
+  "name": "Okeanis Eco Tankers",
+  "isin": "MHY641771016",
+  "icon": "MHY641771016.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SBSW",
+  "name": "Sibanye Stillwater Ltd.",
+  "isin": "ZAE000259701",
+  "icon": "ZAE000259701_unaJI2a.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SHEL",
+  "name": "Shell PLC",
+  "isin": "GB00BP6MXD84",
+  "icon": "GB00BP6MXD84.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "SIX2.DE",
+  "name": "Sixt SE",
+  "isin": "DE0007231326",
+  "icon": "DE0007231326.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "TSLA",
+  "name": "Tesla Inc.",
+  "isin": "US88160R1014",
+  "icon": "US88160R1014.png",
+  "kind": "stock"
+ },
+ {
+  "ticker": "IEMB.L",
+  "name": "iShares J.P. Morgan $ EM Bond UCITS ETF (Dist)",
+  "isin": "IE00B2NPKV68",
+  "icon": "IE00B2NPKV68.png",
+  "kind": "etf"
+ },
+ {
+  "ticker": "SWRD.L",
+  "name": "SPDR MSCI World UCITS ETF",
+  "isin": "IE00BFY0GT14",
+  "icon": "IE00BFY0GT14.png",
+  "kind": "etf"
+ },
+ {
+  "ticker": "ESPO.L",
+  "name": "VanEck Video Gaming and eSports UCITS ETF",
+  "isin": "IE00BYWQWR46",
+  "icon": "IE00BYWQWR46.png",
+  "kind": "etf"
+ }
+]

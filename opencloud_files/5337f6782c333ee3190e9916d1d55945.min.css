@@ -1,0 +1,1 @@
+:root{--long-arrow:path('m130.38 0-1.4 1.4 7.23 7.23H0v1.98h136.21l-7.23 7.22 1.4 1.4L140 9.62z');--wings:var(--layout-width) 0 var(--light-grey),calc(var(--layout-width) * 2) 0 var(--light-grey),calc(var(--layout-width) * -1) 0 var(--light-grey),calc(var(--layout-width) * -2) 0 var(--light-grey);}

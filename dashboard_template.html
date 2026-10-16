@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Акций — Stock Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 2rem; }
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(90deg, #58a6ff, #a371f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #8b949e; margin-bottom: 1.25rem; font-size: 1.05rem; }
+        .search { width: 100%; max-width: 420px; padding: 0.65rem 0.9rem; margin-bottom: 1.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 1rem; outline: none; }
+        .search:focus { border-color: #58a6ff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
+        .card:hover { transform: translateY(-2px); border-color: #58a6ff; box-shadow: 0 8px 24px rgba(88,166,255,0.15); }
+        .card.busy { opacity: 0.6; pointer-events: none; border-color: #a371f7; }
+        .icon { width: 48px; height: 48px; border-radius: 8px; object-fit: contain; background: #fff; flex-shrink: 0; }
+        .icon.placeholder { background: linear-gradient(135deg, #21262d, #30363d); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; color: #58a6ff; }
+        .info { flex: 1; min-width: 0; }
+        .info h3 { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ticker { font-size: 0.8rem; color: #8b949e; font-family: 'SF Mono', Consolas, monospace; }
+        .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #161b22; border: 1px solid #58a6ff; border-radius: 10px; padding: 0.8rem 1.4rem; display: none; align-items: center; gap: 0.8rem; box-shadow: 0 8px 30px rgba(0,0,0,0.5); z-index: 10; }
+        .spinner { border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        footer { margin-top: 3rem; text-align: center; color: #484f58; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Панель Акций — Stock Dashboard</h1>
+        <p class="subtitle">{count} позиций — нажмите на карточку: цена, дивиденды (ex-дата, периодичность, доходность) и анализ на русском</p>
+        <input class="search" id="search" type="search" placeholder="Поиск по названию или тикеру…" autocomplete="off">
+    </header>
+    <main>
+        <div class="grid" id="grid">
+            {cards}
+        </div>
+    </main>
+    <div class="toast" id="toast"><div class="spinner"></div><span id="toast-text">Загружаю данные…</span></div>
+    <footer>Данные: Yahoo Finance, QVeris, Finnhub, Tavily · Только данные из источников, без выдумок</footer>
+    <script>
+        const toast = document.getElementById('toast');
+        const toastText = document.getElementById('toast-text');
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const q = e.target.value.trim().toLowerCase();
+            document.querySelectorAll('.card').forEach(c => {
+                c.style.display = !q || c.dataset.search.includes(q) ? '' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', async () => {
+                const ticker = card.dataset.ticker;
+                // Окно открываем сразу, пока действует клик — иначе браузер блокирует всплывающее окно
+                const win = window.open('', '_blank');
+                if (!win) {
+                    alert('Всплывающее окно заблокировано! Разрешите всплывающие окна для этого сайта и попробуйте снова.');
+                    return;
+                }
+                win.document.write('<body style="background:#0d1117;color:#8b949e;font-family:Segoe UI,sans-serif;padding:3rem">Загружаю данные по ' + ticker + '…</body>');
+                card.classList.add('busy');
+                toastText.textContent = 'Загружаю данные: ' + card.querySelector('h3').textContent + '…';
+                toast.style.display = 'flex';
+                try {
+                    const resp = await fetch('/api/stock/' + encodeURIComponent(ticker));
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+                    win.document.open();
+                    win.document.write(buildReportPage(data));
+                    win.document.close();
+                } catch (e) {
+                    win.document.body.innerHTML = '<p style="color:#f85149;padding:2rem;font-family:sans-serif">Ошибка: ' + String(e.message).replace(/</g, '&lt;') + '</p>';
+                } finally {
+                    card.classList.remove('busy');
+                    toast.style.display = 'none';
+                }
+            });
+        });
+
+        function buildReportPage(d) {
+            const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const safeUrl = (u) => /^https?:\/\//i.test(u) ? esc(u) : '#';
+            const num = (n, digits) => (n == null || isNaN(n)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 2 : digits }).format(n);
+            const money = (n, cur) => n == null ? '—' : num(n, 4) + (cur ? ' ' + esc(cur) : '');
+            const dt = (iso) => { if (!iso) return '—'; const p = String(iso).slice(0, 10).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : '—'; };
+
+            const q = d.quote || {};
+            const dv = d.dividends || {};
+            const chg = (q.change_pct == null || Math.abs(q.change_pct) < 0.005) ? (q.change_pct == null ? null : 0) : q.change_pct;
+            const chgHtml = chg == null ? '' : '<span class="' + (chg >= 0 ? 'up' : 'down') + '">' + (chg >= 0 ? '+' : '') + num(chg, 2) + '%</span>';
+            const icon = d.icon ? '<img class="logo" src="' + esc(d.icon) + '" alt="">' : '';
+            const s = d.sources || {};
+
+            // ── блок дивидендов
+            let divHtml = '';
+            if (dv.has_data) {
+                const tiles = [];
+                tiles.push(['Как часто платят', esc(dv.frequency || '—')]);
+                if (dv.annual_amount != null) tiles.push(['Дивиденд за год', money(dv.annual_amount, dv.currency)]);
+                if (dv.yield_pct != null) tiles.push(['Доходность', num(dv.yield_pct, 2) + ' %']);
+                if (dv.next) {
+                    tiles.push(['Ближайший Ex-Tag (' + esc(dv.next.kind) + ')', dt(dv.next.ex)]);
+                    if (dv.next.pay) tiles.push(['Выплата', dt(dv.next.pay)]);
+                    if (dv.next.amount != null) tiles.push([dv.next.kind === 'оценка' ? 'Ожидаемая сумма' : 'Сумма', money(dv.next.amount, dv.currency)]);
+                }
+                if (dv.last) tiles.push(['Последний Ex-Tag', dt(dv.last.ex) + (dv.last.amount != null ? ' · ' + money(dv.last.amount, dv.currency) : '')]);
+                if (dv.yahoo_rate != null && dv.yahoo_yield_pct != null && dv.annual_amount != null && Math.abs(dv.yahoo_rate - dv.annual_amount) / dv.annual_amount > 0.05)
+                    tiles.push(['Ставка по Yahoo (может отставать)', money(dv.yahoo_rate, dv.currency) + ' (' + num(dv.yahoo_yield_pct, 2) + ' %)']);
+                if (dv.payout_ratio_pct != null) tiles.push(['Доля прибыли на дивиденды', num(dv.payout_ratio_pct, 1) + ' %']);
+
+                const rows = (dv.history || []).map(h => '<tr' + (h.future ? ' class="fut"' : '') + '><td>' + dt(h.ex) + (h.future ? ' (будет)' : '') + '</td><td>' + dt(h.pay) + '</td><td class="r">' + money(h.amount, dv.currency) + '</td></tr>').join('');
+                const notes = (dv.notes || []).map(n => '<p class="note">' + esc(n) + '</p>').join('');
+                divHtml = '<section class="divbox"><h2>Дивиденды</h2><div class="tiles">'
+                    + tiles.map(t => '<div class="tile"><div class="tl">' + t[0] + '</div><div class="tv">' + t[1] + '</div></div>').join('')
+                    + '</div>' + notes
+                    + '<table><thead><tr><th>Ex-Tag (дата отсечки)</th><th>Дата выплаты</th><th class="r">Сумма на акцию</th></tr></thead><tbody>' + rows + '</tbody></table>'
+                    + '<p class="hint">Ex-Tag — день, с которого акция торгуется без права на ближайший дивиденд: чтобы его получить, акцию нужно купить до этой даты. Источники: ' + esc((dv.sources || []).join(', ')) + '.</p></section>';
+            } else {
+                divHtml = '<section class="divbox"><h2>Дивиденды</h2><p>' + esc(dv.note || 'Данных о дивидендах нет.') + '</p></section>';
+            }
+
+            const linkList = (items, withMeta) => items.length ? '<ul class="links">' + items.map(n =>
+                '<li><a href="' + safeUrl(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' + (withMeta && (n.source || n.date) ? ' <span class="muted">— ' + esc([n.source, n.date].filter(Boolean).join(', ')) + '</span>' : '') + '</li>').join('') + '</ul>' : '';
+            const newsHtml = (d.news && d.news.length) ? '<section><h2>Новости за неделю</h2>' + linkList(d.news, true) + '</section>' : '';
+            const webHtml = (d.web && d.web.length) ? '<section><h2>Статьи из интернета</h2>' + linkList(d.web, false) + '</section>' : '';
+
+            const badges = [];
+            if (s.yahoo_quote) badges.push('Yahoo: котировка');
+            if (s.yahoo_dividends) badges.push('Yahoo: ' + s.yahoo_dividends + ' выплат в истории');
+            if (s.qveris_dividends != null) badges.push('QVeris: ' + s.qveris_dividends + ' записей о дивидендах');
+            if (s.finnhub_profile) badges.push('Finnhub: профиль');
+            if (s.finnhub_news) badges.push('Finnhub: ' + s.finnhub_news + ' новостей');
+            if (s.tavily) badges.push('Tavily: ' + s.tavily + ' статей');
+
+            return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${esc(d.ticker)} — Анализ</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 2rem; max-width: 920px; margin: 0 auto; }
+        header { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.75rem; padding-bottom: 1rem; border-bottom: 1px solid #30363d; }
+        .logo { width: 64px; height: 64px; border-radius: 12px; background: #fff; object-fit: contain; flex-shrink: 0; }
+        h1 { font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
+        .price { font-size: 1.3rem; margin-top: 0.25rem; }
+        .up { color: #3fb950; } .down { color: #f85149; }
+        .meta { color: #8b949e; font-size: 0.85rem; }
+        section { margin-bottom: 1.75rem; }
+        h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.5rem; }
+        h2::before { content: ''; width: 4px; height: 1.2rem; background: #58a6ff; border-radius: 2px; }
+        p { color: #c9d1d9; margin-bottom: 0.8rem; }
+        .divbox { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.25rem; }
+        .divbox h2::before { background: #3fb950; }
+        .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+        .tile { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 0.6rem 0.8rem; }
+        .tl { font-size: 0.75rem; color: #8b949e; line-height: 1.3; }
+        .tv { font-size: 1.05rem; font-weight: 600; margin-top: 0.15rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.5rem 0 0.8rem; }
+        th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #21262d; }
+        th { color: #8b949e; font-weight: 500; font-size: 0.8rem; }
+        .r { text-align: right; } .fut td { color: #58a6ff; }
+        .note { color: #d29922; font-size: 0.88rem; }
+        .hint { color: #6e7681; font-size: 0.8rem; margin: 0; }
+        .links { padding-left: 1.2rem; } .links li { margin-bottom: 0.35rem; font-size: 0.92rem; }
+        a { color: #58a6ff; text-decoration: none; } a:hover { text-decoration: underline; }
+        .muted { color: #6e7681; }
+        .sources { font-size: 0.8rem; color: #6e7681; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #30363d; }
+        .badge { display: inline-block; background: #21262d; border: 1px solid #30363d; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin: 0 0.4rem 0.4rem 0; }
+    </style>
+</head>
+<body>
+    <header>
+        ${icon}
+        <div>
+            <h1>${esc(d.name)} (${esc(d.ticker)})</h1>
+            <div class="price">${q.price != null ? money(q.price, q.currency) : 'котировка недоступна'} ${chgHtml}</div>
+            <div class="meta">Создано: ${new Date(d.generated_at).toLocaleString('ru-RU')}</div>
+        </div>
+    </header>
+    ${divHtml}
+    <section style="margin-top:1.75rem"><h2>Обзор бизнеса</h2><p>${esc(d.business)}</p></section>
+    <section><h2>Текущее состояние</h2><p>${esc(d.analysis)}</p></section>
+    <section><h2>Что дальше</h2><p>${esc(d.forecast)}</p></section>
+    ${newsHtml}
+    ${webHtml}
+    <div class="sources">${badges.map(b => '<span class="badge">' + esc(b) + '</span>').join('')}</div>
+</body>
+</html>`;
+        }
+    </script>
+</body>
+</html>
