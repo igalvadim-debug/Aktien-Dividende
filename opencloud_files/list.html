@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>·</title>
+<style>
+  :root { --bg:#0b0f19; --line:#2a3a5c; --text:#eaf0fb; --muted:#8f9bb5; --accent:#35c4ff; --accent2:#7a6cff; --ok:#5ee19a; --err:#ff7b8b; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--text); font-family:Roboto,"Segoe UI",Arial,sans-serif; padding:1.2rem; -webkit-tap-highlight-color:transparent; }
+  form { width:100%; max-width:32rem; display:flex; flex-direction:column; gap:.7rem; }
+  input, textarea { width:100%; padding:.85rem .9rem; border-radius:.6rem; border:1px solid var(--line); background:#0a1120; color:var(--text); font-size:1rem; font-family:inherit; }
+  textarea { min-height:9rem; resize:vertical; }
+  input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  button { height:3rem; border:0; border-radius:.6rem; color:#fff; font-weight:700; font-size:1.2rem; cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  button:disabled { opacity:.6; }
+  .msg { min-height:1.15rem; color:var(--muted); font-size:.9rem; text-align:center; }
+  .msg.err { color:var(--err); }
+  .msg.ok { color:var(--ok); }
+</style>
+</head>
+<body>
+<form id="f" autocomplete="off">
+  <input id="a" type="text" inputmode="url" autocapitalize="off" spellcheck="false">
+  <textarea id="b" autocapitalize="off" spellcheck="false"></textarea>
+  <button id="go" type="submit">&#8594;</button>
+  <div class="msg" id="m"></div>
+</form>
+<script>
+(function () {
+  var LSK = 'iptv.list.addr';
+  var a = document.getElementById('a'), b = document.getElementById('b'), m = document.getElementById('m'), go = document.getElementById('go');
+  try { var s = localStorage.getItem(LSK); if (s) a.value = s; } catch (e) {}
+  function base(v) {
+    v = (v || '').trim();
+    if (!v) return '';
+    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+    return v.replace(/\/+$/, '');
+  }
+  function show(t, cls) { m.textContent = t || ''; m.className = 'msg' + (cls ? ' ' + cls : ''); }
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var url = base(a.value);
+    var v = (b.value || '').trim();
+    if (!url || !v) { show('—', 'err'); return; }
+    try { localStorage.setItem(LSK, a.value.trim()); } catch (e2) {}
+    var single = v.indexOf('\n') < 0 && /^https?:\/\//i.test(v);
+    go.disabled = true; show('…');
+    var p;
+    if (single) {
+      p = fetch(url + '/api/remote?cmd=loadUrl&url=' + encodeURIComponent(v), { cache: 'no-store' }).then(function (r) { return r.json(); });
+    } else {
+      p = fetch(url + '/api/remote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd: 'loadText', text: v })
+      }).then(function (r) { return r.json(); });
+    }
+    p.then(function (s) {
+      if (s && s.ok === false) show((s.error || '') || 'err', 'err');
+      else show('ok', 'ok');
+    }).catch(function () { show('нет связи', 'err'); }).then(function () { go.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>
