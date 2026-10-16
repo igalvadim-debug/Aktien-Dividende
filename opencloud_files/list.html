@@ -22,45 +22,29 @@
 </head>
 <body>
 <form id="f" autocomplete="off">
-  <input id="a" type="text" inputmode="url" autocapitalize="off" spellcheck="false">
-  <textarea id="b" autocapitalize="off" spellcheck="false"></textarea>
+  <input id="c" type="text" autocapitalize="characters" spellcheck="false" maxlength="64">
+  <textarea id="p" autocapitalize="off" spellcheck="false"></textarea>
   <button id="go" type="submit">&#8594;</button>
   <div class="msg" id="m"></div>
 </form>
 <script>
 (function () {
-  var LSK = 'iptv.list.addr';
-  var a = document.getElementById('a'), b = document.getElementById('b'), m = document.getElementById('m'), go = document.getElementById('go');
-  try { var s = localStorage.getItem(LSK); if (s) a.value = s; } catch (e) {}
-  function base(v) {
-    v = (v || '').trim();
-    if (!v) return '';
-    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
-    return v.replace(/\/+$/, '');
-  }
+  var LSK = 'k.code';
+  var BASE = 'https://ntfy.sh/';
+  var c = document.getElementById('c'), p = document.getElementById('p'), m = document.getElementById('m'), go = document.getElementById('go');
+  try { var s = localStorage.getItem(LSK); if (s) c.value = s; } catch (e) {}
   function show(t, cls) { m.textContent = t || ''; m.className = 'msg' + (cls ? ' ' + cls : ''); }
   document.getElementById('f').addEventListener('submit', function (e) {
     e.preventDefault();
-    var url = base(a.value);
-    var v = (b.value || '').trim();
-    if (!url || !v) { show('—', 'err'); return; }
-    try { localStorage.setItem(LSK, a.value.trim()); } catch (e2) {}
-    var single = v.indexOf('\n') < 0 && /^https?:\/\//i.test(v);
+    var code = (c.value || '').trim().replace(/[^A-Za-z0-9_-]/g, '');
+    var v = (p.value || '').trim();
+    if (!code || !v) { show('—', 'err'); return; }
+    try { localStorage.setItem(LSK, code); } catch (e2) {}
     go.disabled = true; show('…');
-    var p;
-    if (single) {
-      p = fetch(url + '/api/remote?cmd=loadUrl&url=' + encodeURIComponent(v), { cache: 'no-store' }).then(function (r) { return r.json(); });
-    } else {
-      p = fetch(url + '/api/remote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cmd: 'loadText', text: v })
-      }).then(function (r) { return r.json(); });
-    }
-    p.then(function (s) {
-      if (s && s.ok === false) show((s.error || '') || 'err', 'err');
-      else show('ok', 'ok');
-    }).catch(function () { show('нет связи', 'err'); }).then(function () { go.disabled = false; });
+    fetch(BASE + encodeURIComponent(code), { method: 'POST', body: v })
+      .then(function (r) { if (r.ok) show('ok', 'ok'); else show('HTTP ' + r.status, 'err'); })
+      .catch(function () { show('нет связи', 'err'); })
+      .then(function () { go.disabled = false; });
   });
 })();
 </script>
