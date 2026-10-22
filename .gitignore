@@ -1,4 +1,2 @@
-/icons
-/.link
-/trial
-/list.html
+__pycache__/
+*.pyc
