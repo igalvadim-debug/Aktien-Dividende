@@ -432,8 +432,9 @@ def analyze_dividends(yf_divs, qv_divs, price, currency, info):
     nxt = None
     if future:
         f = future[0]
+        # kind — статус ex-даты; pay_kind — отдельный статус даты выплаты
         nxt = {"ex": f["ex"].isoformat(), "amount": f["amount"], "pay": f.get("pay"),
-               "kind": "объявлена"}
+               "kind": "объявлена", "pay_kind": "объявлена" if f.get("pay") else None}
     elif last and active and freq:
         gap = int(round(gap_days)) if gap_days else int(round(365 / freq))
         d = last["ex"] + timedelta(days=gap)
@@ -442,10 +443,12 @@ def analyze_dividends(yf_divs, qv_divs, price, currency, info):
                          "отменён или сокращён, либо данные ещё не обновились. Дата ниже — оценка на следующий цикл.")
         while d <= today:
             d += timedelta(days=gap)
-        nxt = {"ex": d.isoformat(), "amount": last["amount"], "pay": None, "kind": "оценка"}
+        nxt = {"ex": d.isoformat(), "amount": last["amount"], "pay": None, "kind": "оценка",
+               "pay_kind": None}
         # оценка даты выплаты: у большинства компаний выплата через ~2–4 недели после ex-Tag
         pay_est = d + timedelta(days=21)
         nxt["pay"] = pay_est.isoformat()
+        nxt["pay_kind"] = "оценка"
         notes.append("Ближайшая ex-дата — ОЦЕНКА по датам прошлых выплат (±несколько недель), "
                      "компания её пока не объявила. Дата выплаты тоже оценочная (~3 недели после ex-Tag). "
                      "Важно: ex-Tag и дата выплаты — это НЕ один и тот же день; чтобы получить дивиденд, "
@@ -588,7 +591,8 @@ def generate_report(stock):
     fc = []
     if div.get("has_data") and div.get("next"):
         n = div["next"]
-        pay_txt = f" Предполагаемая дата выплаты (~{n['kind']}): {fmt_date(n['pay'])} — это НЕ тот же день, что и ex-Tag." if n.get("pay") else ""
+        pay_kind = n.get("pay_kind") or n["kind"]  # статус даты выплаты отдельный от статуса ex-даты
+        pay_txt = f" Предполагаемая дата выплаты (~{pay_kind}): {fmt_date(n['pay'])} — это НЕ тот же день, что и ex-Tag." if n.get("pay") else ""
         fc.append(f"Ближайшая экс-дивидендная дата ({n['kind']}): {fmt_date(n['ex'])}. "
                   "Чтобы получить этот дивиденд, акцию нужно купить до этой даты." + pay_txt)
     if web:
