@@ -443,8 +443,13 @@ def analyze_dividends(yf_divs, qv_divs, price, currency, info):
         while d <= today:
             d += timedelta(days=gap)
         nxt = {"ex": d.isoformat(), "amount": last["amount"], "pay": None, "kind": "оценка"}
+        # оценка даты выплаты: у большинства компаний выплата через ~2–4 недели после ex-Tag
+        pay_est = d + timedelta(days=21)
+        nxt["pay"] = pay_est.isoformat()
         notes.append("Ближайшая ex-дата — ОЦЕНКА по датам прошлых выплат (±несколько недель), "
-                     "компания её пока не объявила.")
+                     "компания её пока не объявила. Дата выплаты тоже оценочная (~3 недели после ex-Tag). "
+                     "Важно: ex-Tag и дата выплаты — это НЕ один и тот же день; чтобы получить дивиденд, "
+                     "акцию нужно купить до ex-даты.")
     if nxt:
         res["next"] = nxt
 
@@ -583,8 +588,9 @@ def generate_report(stock):
     fc = []
     if div.get("has_data") and div.get("next"):
         n = div["next"]
+        pay_txt = f" Предполагаемая дата выплаты (~{n['kind']}): {fmt_date(n['pay'])} — это НЕ тот же день, что и ex-Tag." if n.get("pay") else ""
         fc.append(f"Ближайшая экс-дивидендная дата ({n['kind']}): {fmt_date(n['ex'])}. "
-                  "Чтобы получить этот дивиденд, акцию нужно купить до этой даты.")
+                  "Чтобы получить этот дивиденд, акцию нужно купить до этой даты." + pay_txt)
     if web:
         snippets = [f"«{trim(w.get('title', ''), 90)}»: {trim(w.get('content', ''), 200)}"
                     for w in web[:3] if w.get("title") and w.get("content")]

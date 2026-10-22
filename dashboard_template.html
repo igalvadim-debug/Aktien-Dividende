@@ -102,7 +102,7 @@
                 if (dv.yield_pct != null) tiles.push(['Доходность', num(dv.yield_pct, 2) + ' %']);
                 if (dv.next) {
                     tiles.push(['Ближайший Ex-Tag (' + esc(dv.next.kind) + ')', dt(dv.next.ex)]);
-                    if (dv.next.pay) tiles.push(['Выплата', dt(dv.next.pay)]);
+                    if (dv.next.pay) tiles.push(['Предполагаемая выплата (' + esc(dv.next.kind) + ')', dt(dv.next.pay)]);
                     if (dv.next.amount != null) tiles.push([dv.next.kind === 'оценка' ? 'Ожидаемая сумма' : 'Сумма', money(dv.next.amount, dv.currency)]);
                 }
                 if (dv.last) tiles.push(['Последний Ex-Tag', dt(dv.last.ex) + (dv.last.amount != null ? ' · ' + money(dv.last.amount, dv.currency) : '')]);
