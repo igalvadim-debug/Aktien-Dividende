@@ -10,6 +10,7 @@
   * { box-sizing: border-box; }
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--text); font-family:Roboto,"Segoe UI",Arial,sans-serif; padding:1.2rem; -webkit-tap-highlight-color:transparent; }
   form { width:100%; max-width:32rem; display:flex; flex-direction:column; gap:.7rem; }
+  .cap { font-size:.85rem; color:var(--muted); margin:0 0 -.35rem; letter-spacing:.02em; }
   input, textarea { width:100%; padding:.85rem .9rem; border-radius:.6rem; border:1px solid var(--line); background:#0a1120; color:var(--text); font-size:1rem; font-family:inherit; }
   textarea { min-height:9rem; resize:vertical; }
   input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
@@ -22,6 +23,7 @@
 </head>
 <body>
 <form id="f" autocomplete="off">
+  <label class="cap" for="c">input code</label>
   <input id="c" type="text" autocapitalize="characters" spellcheck="false" maxlength="64">
   <textarea id="p" autocapitalize="off" spellcheck="false"></textarea>
   <button id="go" type="submit">&#8594;</button>
